@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fff9ff;
+  --foreground: #2b1c3c;
+  --lavender-50: #fbf5ff;
+  --lavender-100: #f5ebff;
+  --lavender-200: #ead9ff;
+  --lavender-300: #dcc2ff;
+  --lavender-500: #a478d1;
+  --pink-100: #ffe8f2;
+  --pink-200: #ffd8ea;
+  --card: rgba(255, 255, 255, 0.62);
+  --card-border: rgba(158, 112, 189, 0.24);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-manrope);
+  --font-serif: var(--font-playfair);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(circle at 10% 10%, #ffe6f4 0%, transparent 36%),
+    radial-gradient(circle at 88% 12%, #efe4ff 0%, transparent 34%),
+    linear-gradient(160deg, #fff7fd 0%, #f9f0ff 44%, #fffdfd 100%);
+  color: var(--foreground);
+  font-family: var(--font-manrope), "Segoe UI", sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+.glass {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(14px);
+}
+
+.soft-shadow {
+  box-shadow: 0 14px 36px rgba(130, 73, 160, 0.12);
+}
+
+.fade-up {
+  animation: fadeUp 650ms ease-out both;
+}
+
+.float-love {
+  animation: floatLove 3.4s ease-in-out infinite;
+}
+
+.pulse-love {
+  animation: pulseLove 1.8s ease-in-out infinite;
+}
+
+.drift {
+  animation: drift 9s linear infinite;
+}
+
+.wander-love {
+  animation: wanderLove var(--dur, 14s) ease-in-out infinite;
+}
+
+.flood-rise {
+  animation: floodRise var(--dur, 10s) linear infinite;
+}
+
+.flood-wave {
+  animation: floodWave var(--dur, 6.5s) ease-in-out infinite;
+}
+
+.bloom-burst {
+  animation: bloomBurst var(--dur, 5s) ease-out infinite;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatLove {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes pulseLove {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(230, 107, 153, 0.2));
+  }
+  50% {
+    transform: scale(1.09);
+    filter: drop-shadow(0 8px 20px rgba(230, 107, 153, 0.36));
+  }
+}
+
+@keyframes drift {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.55;
+  }
+  85% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-240px) translateX(24px);
+    opacity: 0;
+  }
+}
+
+@keyframes wanderLove {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.9);
+  }
+  25% {
+    transform: translate3d(36px, -42px, 0) scale(1.1);
+  }
+  50% {
+    transform: translate3d(-32px, -84px, 0) scale(0.95);
+  }
+  75% {
+    transform: translate3d(18px, -124px, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(0, -170px, 0) scale(1);
+  }
+}
+
+@keyframes floodRise {
+  0% {
+    transform: translate3d(0, 120px, 0) scale(0.8);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate3d(0, -118vh, 0) scale(1.15);
+    opacity: 0;
+  }
+}
+
+@keyframes floodWave {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  30% {
+    transform: translateX(14px) rotate(7deg);
+  }
+  65% {
+    transform: translateX(-12px) rotate(-8deg);
+  }
+}
+
+@keyframes bloomBurst {
+  0% {
+    transform: scale(0.15);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.36;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
