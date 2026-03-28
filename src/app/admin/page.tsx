@@ -28,7 +28,7 @@ type AdminStore = {
   documents: UploadedDoc[];
 };
 
-const ADMIN_KEY = "DiyaHIme127";
+const ADMIN_KEY = "DiyaHimu127";
 
 const initialStore: AdminStore = {
   profileImageDataUrl: "",

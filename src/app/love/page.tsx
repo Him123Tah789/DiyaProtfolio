@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 
-const ACCESS_KEY = "DiyaHIme127";
+const ACCESS_KEY = "DiyaHimu127";
 const LOVE_STORAGE_KEY = "diyaverse-love-v1";
 
 type MemoryEntry = {
