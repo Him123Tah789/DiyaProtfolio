@@ -1,37 +1,20 @@
 "use client";
 
+import type { CSSProperties, FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-const ACCESS_KEY = "DiyaHimu127";
-const LOVE_STORAGE_KEY = "diyaverse-love-v1";
-
-type MemoryEntry = {
-  id: string;
-  text: string;
-  createdAt: string;
-};
-
-type LoveImage = {
-  id: string;
-  dataUrl: string;
-  caption: string;
-  createdAt: string;
-};
-
-type LoveStore = {
-  memories: MemoryEntry[];
-  images: LoveImage[];
-};
-
-const initialLoveStore: LoveStore = {
-  memories: [],
-  images: [],
-};
+import {
+  ACCESS_KEY,
+  type LoveStore,
+  initialLoveStore,
+  loadLoveStore,
+} from "@/lib/love-store";
 
 const flowerIcons = ["🌸", "🌷", "🌺", "🌹", "🌼", "🪷"];
 const loveIcons = ["❤", "💗", "💖", "💘", "💕", "💞", "💓", "🩷", "💜"];
+const objectIcons = ["✨", "⭐", "💫", "🎀", "🫧", "💍", "🕊️"];
 const colors = [
   "#ff5f9e",
   "#a96ae0",
@@ -44,34 +27,156 @@ const colors = [
   "#ff6699",
 ];
 
+type MovingItem = {
+  id: string;
+  left: string;
+  top: string;
+  delay: string;
+  duration: string;
+  size: string;
+  icon: string;
+  color: string;
+  x1: string;
+  y1: string;
+  x2: string;
+  y2: string;
+  x3: string;
+  y3: string;
+  x4: string;
+  y4: string;
+  r1: string;
+  r2: string;
+  r3: string;
+  r4: string;
+};
+
+const createSeededRandom = (seed: number) => {
+  let value = seed >>> 0;
+  return () => {
+    value = (value * 1664525 + 1013904223) >>> 0;
+    return value / 4294967296;
+  };
+};
+
+const randomRange = (random: () => number, min: number, max: number) =>
+  min + (max - min) * random();
+
 const makeFloodItems = (count: number, icons: string[]) =>
   Array.from({ length: count }).map((_, index) => ({
     id: `f-${index}`,
     left: `${(index * 13 + (index % 7) * 5) % 100}%`,
     delay: `${(index * 0.35) % 8}s`,
-    duration: `${8 + (index % 7)}s`,
+    duration: `${4.2 + (index % 5) * 0.85}s`,
     size: `${1 + (index % 3) * 0.35}rem`,
     icon: icons[index % icons.length],
     color: colors[index % colors.length],
   }));
 
+const makeRandomMotionItems = (count: number, icons: string[], seed: number): MovingItem[] => {
+  const random = createSeededRandom(seed);
+
+  return Array.from({ length: count }).map((_, index) => ({
+    id: `m-${index}`,
+    left: `${Math.round(randomRange(random, 2, 96))}%`,
+    top: `${Math.round(randomRange(random, 4, 94))}%`,
+    delay: `${randomRange(random, 0, 3.5).toFixed(2)}s`,
+    duration: `${randomRange(random, 4.2, 7.1).toFixed(2)}s`,
+    size: `${randomRange(random, 0.95, 1.75).toFixed(2)}rem`,
+    icon: icons[index % icons.length],
+    color: colors[(index + 3) % colors.length],
+    x1: `${Math.round(randomRange(random, -26, 26))}px`,
+    y1: `${Math.round(randomRange(random, -22, 22))}px`,
+    x2: `${Math.round(randomRange(random, -30, 30))}px`,
+    y2: `${Math.round(randomRange(random, -30, 30))}px`,
+    x3: `${Math.round(randomRange(random, -36, 36))}px`,
+    y3: `${Math.round(randomRange(random, -36, 36))}px`,
+    x4: `${Math.round(randomRange(random, -46, 46))}px`,
+    y4: `${Math.round(randomRange(random, -46, 46))}px`,
+    r1: `${Math.round(randomRange(random, -18, 18))}deg`,
+    r2: `${Math.round(randomRange(random, -25, 25))}deg`,
+    r3: `${Math.round(randomRange(random, -35, 35))}deg`,
+    r4: `${Math.round(randomRange(random, -42, 42))}deg`,
+  }));
+};
+
 const makeBloomBursts = () =>
-  Array.from({ length: 12 }).map((_, index) => ({
+  Array.from({ length: 18 }).map((_, index) => ({
     id: `b-${index}`,
     left: `${8 + index * 8}%`,
     top: `${10 + (index % 4) * 18}%`,
     delay: `${(index * 0.6) % 7}s`,
-    duration: `${4 + (index % 4)}s`,
+    duration: `${2.2 + (index % 4) * 0.7}s`,
     color: colors[index % colors.length],
   }));
 
-const toDataUrl = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("Failed to read image."));
-    reader.readAsDataURL(file);
-  });
+const makeOrbitItems = (count: number, icons: string[]) =>
+  Array.from({ length: count }).map((_, index) => ({
+    id: `o-${index}`,
+    left: `${(index * 11 + (index % 5) * 9) % 100}%`,
+    top: `${(index * 9 + (index % 6) * 7) % 100}%`,
+    delay: `${(index * 0.4) % 9}s`,
+    duration: `${4.6 + (index % 6) * 0.8}s`,
+    size: `${0.95 + (index % 4) * 0.32}rem`,
+    icon: icons[index % icons.length],
+    color: colors[(index + 2) % colors.length],
+  }));
+
+const makeBloomFlowers = () =>
+  Array.from({ length: 48 }).map((_, index) => ({
+    id: `bf-${index}`,
+    left: `${(index * 17 + (index % 3) * 6) % 100}%`,
+    top: `${(index * 7 + (index % 4) * 11) % 100}%`,
+    delay: `${(index * 0.42) % 11}s`,
+    duration: `${2.4 + (index % 6) * 0.62}s`,
+    size: `${0.8 + (index % 4) * 0.4}rem`,
+    flower: flowerIcons[index % flowerIcons.length],
+    color: colors[(index + 4) % colors.length],
+  }));
+
+const nameHighlights = [
+  {
+    id: "name-diya",
+    text: "Diya",
+    left: "9%",
+    top: "15%",
+    duration: "7.5s",
+    delay: "0.2s",
+    color: "#ff3a88",
+    x1: "28px",
+    y1: "-30px",
+    x2: "-34px",
+    y2: "20px",
+    x3: "36px",
+    y3: "-10px",
+    x4: "-24px",
+    y4: "-42px",
+    r1: "6deg",
+    r2: "-8deg",
+    r3: "11deg",
+    r4: "-6deg",
+  },
+  {
+    id: "name-himu",
+    text: "Himu",
+    left: "68%",
+    top: "68%",
+    duration: "8.2s",
+    delay: "0.9s",
+    color: "#9a35ff",
+    x1: "-32px",
+    y1: "24px",
+    x2: "24px",
+    y2: "-28px",
+    x3: "-38px",
+    y3: "18px",
+    x4: "28px",
+    y4: "-40px",
+    r1: "-7deg",
+    r2: "8deg",
+    r3: "-10deg",
+    r4: "7deg",
+  },
+] as const;
 
 const romanticDialogs = [
   "In every version of tomorrow, I still choose you.",
@@ -84,118 +189,25 @@ export default function LovePage() {
   const [passphrase, setPassphrase] = useState("");
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [error, setError] = useState("");
-  const [memoryText, setMemoryText] = useState("");
-  const [imageCaption, setImageCaption] = useState("");
-  const [store, setStore] = useState<LoveStore>(() => {
-    if (typeof window === "undefined") {
-      return initialLoveStore;
-    }
+  const [store, setStore] = useState<LoveStore>(initialLoveStore);
 
-    const saved = window.localStorage.getItem(LOVE_STORAGE_KEY);
-    if (!saved) {
-      return initialLoveStore;
-    }
-
-    try {
-      const parsed = JSON.parse(saved) as LoveStore;
-      return {
-        memories: parsed.memories ?? [],
-        images: parsed.images ?? [],
-      };
-    } catch {
-      return initialLoveStore;
-    }
-  });
-
-  const flowerFlood = useMemo(() => makeFloodItems(44, flowerIcons), []);
-  const loveFlood = useMemo(() => makeFloodItems(46, loveIcons), []);
+  const flowerFlood = useMemo(() => makeFloodItems(60, flowerIcons), []);
+  const loveFlood = useMemo(() => makeFloodItems(64, loveIcons), []);
   const blooms = useMemo(() => makeBloomBursts(), []);
-
-  useEffect(() => {
-    if (!isUnlocked) {
-      return;
-    }
-
-    window.localStorage.setItem(LOVE_STORAGE_KEY, JSON.stringify(store));
-  }, [store, isUnlocked]);
+  const orbitItems = useMemo(() => makeRandomMotionItems(46, objectIcons, 3016), []);
+  const bloomFlowers = useMemo(() => makeBloomFlowers(), []);
 
   const handleUnlock = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (passphrase.trim() === ACCESS_KEY) {
+      setStore(loadLoveStore());
       setIsUnlocked(true);
       setError("");
       return;
     }
 
     setError("Only Diya can open this private Love page.");
-  };
-
-  const handleAddMemory = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!memoryText.trim()) {
-      return;
-    }
-
-    const newMemory: MemoryEntry = {
-      id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-      text: memoryText.trim(),
-      createdAt: new Date().toISOString(),
-    };
-
-    setStore((current) => ({
-      ...current,
-      memories: [newMemory, ...current.memories],
-    }));
-    setMemoryText("");
-  };
-
-  const handleUploadImages = async (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) {
-      return;
-    }
-
-    const uploaded: LoveImage[] = [];
-
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith("image/")) {
-        continue;
-      }
-
-      const dataUrl = await toDataUrl(file);
-      uploaded.push({
-        id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-        dataUrl,
-        caption: imageCaption.trim() || "Our beautiful memory",
-        createdAt: new Date().toISOString(),
-      });
-    }
-
-    if (uploaded.length > 0) {
-      setStore((current) => ({
-        ...current,
-        images: [...uploaded, ...current.images],
-      }));
-    }
-
-    setImageCaption("");
-    event.target.value = "";
-  };
-
-  const removeMemory = (id: string) => {
-    setStore((current) => ({
-      ...current,
-      memories: current.memories.filter((item) => item.id !== id),
-    }));
-  };
-
-  const removeImage = (id: string) => {
-    setStore((current) => ({
-      ...current,
-      images: current.images.filter((item) => item.id !== id),
-    }));
   };
 
   return (
@@ -215,6 +227,88 @@ export default function LovePage() {
           }}
         />
       ))}
+
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {orbitItems.map((item) => (
+          <span
+            key={item.id}
+            className="random-wander absolute opacity-80"
+            style={
+              {
+              left: item.left,
+              top: item.top,
+              animationDelay: item.delay,
+              animationDuration: item.duration,
+              fontSize: item.size,
+              color: item.color,
+              textShadow: "0 8px 20px rgba(235, 120, 170, 0.32)",
+                "--x1": item.x1,
+                "--y1": item.y1,
+                "--x2": item.x2,
+                "--y2": item.y2,
+                "--x3": item.x3,
+                "--y3": item.y3,
+                "--x4": item.x4,
+                "--y4": item.y4,
+                "--r1": item.r1,
+                "--r2": item.r2,
+                "--r3": item.r3,
+                "--r4": item.r4,
+              } as CSSProperties
+            }
+          >
+            {item.icon}
+          </span>
+        ))}
+
+        {nameHighlights.map((item) => (
+          <span
+            key={item.id}
+            className="love-name-highlight random-wander absolute"
+            style={
+              {
+                left: item.left,
+                top: item.top,
+                animationDelay: item.delay,
+                animationDuration: item.duration,
+                color: item.color,
+                "--x1": item.x1,
+                "--y1": item.y1,
+                "--x2": item.x2,
+                "--y2": item.y2,
+                "--x3": item.x3,
+                "--y3": item.y3,
+                "--x4": item.x4,
+                "--y4": item.y4,
+                "--r1": item.r1,
+                "--r2": item.r2,
+                "--r3": item.r3,
+                "--r4": item.r4,
+              } as CSSProperties
+            }
+          >
+            {item.text}
+          </span>
+        ))}
+
+        {bloomFlowers.map((item) => (
+          <span
+            key={item.id}
+            className="bloom-flower absolute opacity-65"
+            style={{
+              left: item.left,
+              top: item.top,
+              animationDelay: item.delay,
+              animationDuration: item.duration,
+              fontSize: item.size,
+              color: item.color,
+              textShadow: "0 7px 16px rgba(255, 145, 198, 0.3)",
+            }}
+          >
+            {item.flower}
+          </span>
+        ))}
+      </div>
 
       <div className="pointer-events-none absolute inset-0">
         {flowerFlood.map((item) => (
@@ -242,7 +336,7 @@ export default function LovePage() {
               left: item.left,
               bottom: "-8rem",
               animationDelay: item.delay,
-              animationDuration: `${Number.parseFloat(item.duration) + 1.8}s`,
+              animationDuration: `${Number.parseFloat(item.duration) + 0.7}s`,
               fontSize: item.size,
               color: item.color,
               textShadow: "0 6px 16px rgba(255, 149, 193, 0.35)",
@@ -295,6 +389,12 @@ export default function LovePage() {
               <span className="float-love inline-flex items-center rounded-full bg-[#f2e5ff] px-4 py-2 text-sm font-semibold text-[#74499a]">
                 Keep shining forever 💖
               </span>
+              <Link
+                href="/love/edit"
+                className="rounded-full border border-[#d5b2ef] bg-white/85 px-4 py-2 text-sm font-semibold text-[#6c3f96] transition hover:bg-[#f4e8ff]"
+              >
+                Edit Story & Pictures
+              </Link>
             </div>
 
             <section className="mt-8 rounded-2xl bg-white/70 p-5">
@@ -318,71 +418,43 @@ export default function LovePage() {
               </div>
             </section>
 
+            <section className="mt-6 rounded-2xl bg-white/70 p-5">
+              <h2 className="font-display text-2xl font-semibold text-[#6b3d8d]">Our Story</h2>
+              {store.story ? (
+                <p className="mt-3 whitespace-pre-line text-sm leading-8 text-[#604a77]">{store.story}</p>
+              ) : (
+                <p className="mt-3 rounded-xl bg-white/65 p-3 text-sm text-[#6d5a82]">
+                  No story added yet. Use Edit Story & Pictures to write your love story.
+                </p>
+              )}
+            </section>
+
             <section className="mt-6 grid gap-5 md:grid-cols-2">
               <article className="rounded-2xl bg-white/70 p-5">
-                <h2 className="font-display text-2xl font-semibold text-[#6b3d8d]">Our Memories</h2>
-                <form onSubmit={handleAddMemory} className="mt-4 space-y-3">
-                  <textarea
-                    value={memoryText}
-                    onChange={(event) => setMemoryText(event.target.value)}
-                    rows={4}
-                    placeholder="Write a sweet memory..."
-                    className="w-full rounded-xl border border-[#dec7f4] bg-white/85 px-4 py-3 outline-none ring-[#b98fda] focus:ring"
-                  />
-                  <button className="rounded-full bg-[#a478d1] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#8d59b8]">
-                    Save Memory
-                  </button>
-                </form>
-
+                <h2 className="font-display text-2xl font-semibold text-[#6b3d8d]">Sweet Memories</h2>
                 <ul className="mt-4 space-y-2">
                   {store.memories.length === 0 && (
                     <li className="rounded-xl bg-white/60 p-3 text-sm text-[#6d5a82]">
-                      No memory yet. Start writing your story.
+                      No memories added yet.
                     </li>
                   )}
                   {store.memories.map((memory) => (
                     <li key={memory.id} className="rounded-xl bg-white/80 p-3">
                       <p className="text-sm text-[#6a507f]">{memory.text}</p>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-xs text-[#8b6ca4]">
-                          {new Date(memory.createdAt).toLocaleString()}
-                        </span>
-                        <button
-                          onClick={() => removeMemory(memory.id)}
-                          className="rounded-full border border-[#f0bfd8] bg-white px-3 py-1 text-xs font-semibold text-[#a44a73]"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                      <span className="mt-2 block text-xs text-[#8b6ca4]">
+                        {new Date(memory.createdAt).toLocaleString()}
+                      </span>
                     </li>
                   ))}
                 </ul>
               </article>
 
               <article className="rounded-2xl bg-white/70 p-5">
-                <h2 className="font-display text-2xl font-semibold text-[#6b3d8d]">Picture Vault</h2>
-                <p className="mt-2 text-sm text-[#5f4b74]">Store pictures of us and keep them here.</p>
-                <input
-                  value={imageCaption}
-                  onChange={(event) => setImageCaption(event.target.value)}
-                  placeholder="Caption for uploaded images"
-                  className="mt-3 w-full rounded-xl border border-[#dec7f4] bg-white/85 px-4 py-2 outline-none ring-[#b98fda] focus:ring"
-                />
-                <label className="mt-3 inline-block cursor-pointer rounded-full bg-[#a478d1] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#8d59b8]">
-                  Upload Pictures
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleUploadImages}
-                    className="hidden"
-                  />
-                </label>
-
+                <h2 className="font-display text-2xl font-semibold text-[#6b3d8d]">Picture Visualization</h2>
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   {store.images.length === 0 && (
                     <p className="col-span-2 rounded-xl bg-white/60 p-3 text-sm text-[#6d5a82]">
-                      No pictures uploaded yet.
+                      No pictures available yet.
                     </p>
                   )}
                   {store.images.map((image) => (
@@ -396,12 +468,6 @@ export default function LovePage() {
                         className="h-32 w-full rounded-lg object-cover"
                       />
                       <p className="mt-2 text-xs text-[#704f88]">{image.caption}</p>
-                      <button
-                        onClick={() => removeImage(image.id)}
-                        className="mt-2 rounded-full border border-[#f0bfd8] bg-white px-3 py-1 text-xs font-semibold text-[#a44a73]"
-                      >
-                        Delete
-                      </button>
                     </div>
                   ))}
                 </div>
@@ -411,6 +477,12 @@ export default function LovePage() {
         )}
 
         <div className="mt-10 flex gap-3">
+          <Link
+            href="/love/edit"
+            className="rounded-full border border-[#caa5e5] bg-white/75 px-5 py-2 text-sm font-semibold text-[#6a3f8b] transition hover:bg-[#f5ebff]"
+          >
+            Open Edit Page
+          </Link>
           <Link
             href="/"
             className="rounded-full border border-[#c9a7e8] bg-white/75 px-5 py-2 text-sm font-semibold text-[#603b80] transition hover:bg-[#f5ebff]"
