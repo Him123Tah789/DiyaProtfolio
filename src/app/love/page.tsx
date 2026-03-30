@@ -9,8 +9,8 @@ import {
   ACCESS_KEY,
   type LoveStore,
   initialLoveStore,
-  loadLoveStore,
 } from "@/lib/love-store";
+import { fetchLoveStore } from "@/lib/love-api";
 
 const flowerIcons = ["🌸", "🌷", "🌺", "🌹", "🌼", "🪷"];
 const loveIcons = ["❤", "💗", "💖", "💘", "💕", "💞", "💓", "🩷", "💜"];
@@ -197,13 +197,18 @@ export default function LovePage() {
   const orbitItems = useMemo(() => makeRandomMotionItems(46, objectIcons, 3016), []);
   const bloomFlowers = useMemo(() => makeBloomFlowers(), []);
 
-  const handleUnlock = (event: FormEvent<HTMLFormElement>) => {
+  const handleUnlock = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (passphrase.trim() === ACCESS_KEY) {
-      setStore(loadLoveStore());
-      setIsUnlocked(true);
-      setError("");
+      try {
+        const remoteStore = await fetchLoveStore();
+        setStore(remoteStore);
+        setIsUnlocked(true);
+        setError("");
+      } catch {
+        setError("Could not load online love data. Please try again.");
+      }
       return;
     }
 
@@ -460,7 +465,7 @@ export default function LovePage() {
                   {store.images.map((image) => (
                     <div key={image.id} className="rounded-xl bg-white/80 p-2">
                       <Image
-                        src={image.dataUrl}
+                        src={image.url}
                         alt={image.caption}
                         width={220}
                         height={180}

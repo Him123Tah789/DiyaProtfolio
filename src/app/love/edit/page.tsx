@@ -11,9 +11,15 @@ import {
   type LoveImage,
   type LoveStore,
   initialLoveStore,
-  loadLoveStore,
-  saveLoveStore,
 } from "@/lib/love-store";
+import {
+  fetchLoveStore,
+  removeLoveImage,
+  removeLoveMemory,
+  saveLoveImage,
+  saveLoveMemory,
+  saveLoveStory,
+} from "@/lib/love-api";
 
 const toDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -34,65 +40,79 @@ export default function LoveEditPage() {
   const [imageCaption, setImageCaption] = useState("");
   const [status, setStatus] = useState("");
 
-  const updateStore = (updater: (current: LoveStore) => LoveStore) => {
-    setStore((current) => {
-      const next = updater(current);
-      if (isUnlocked) {
-        saveLoveStore(next);
-      }
-      return next;
-    });
+  const handleSaveAll = async () => {
+    try {
+      const refreshed = await fetchLoveStore();
+      setStore(refreshed);
+      setStoryDraft(refreshed.story);
+      setStatus("Synced latest data from database.");
+    } catch {
+      setStatus("Could not sync with database right now.");
+    }
   };
 
-  const handleSaveAll = () => {
-    saveLoveStore(store);
-    setStatus("All changes saved.");
-  };
-
-  const handleUnlock = (event: FormEvent<HTMLFormElement>) => {
+  const handleUnlock = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (passphrase.trim() === ACCESS_KEY) {
-      const loaded = loadLoveStore();
-      setStore(loaded);
-      setStoryDraft(loaded.story);
-      setIsUnlocked(true);
-      setError("");
-      setStatus("Love data loaded.");
+      try {
+        const loaded = await fetchLoveStore();
+        setStore(loaded);
+        setStoryDraft(loaded.story);
+        setIsUnlocked(true);
+        setError("");
+        setStatus("Love data loaded from database.");
+      } catch {
+        setError("Could not load online data. Check database settings.");
+      }
       return;
     }
 
     setError("Wrong passphrase. Only Diya can edit this page.");
   };
 
-  const handleSaveStory = (event: FormEvent<HTMLFormElement>) => {
+  const handleSaveStory = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    updateStore((current) => ({
+    const story = storyDraft.trim();
+    setStore((current) => ({
       ...current,
-      story: storyDraft.trim(),
+      story,
     }));
-    setStatus("Story saved successfully.");
+    try {
+      await saveLoveStory(story);
+      setStatus("Story saved to database.");
+    } catch {
+      setStatus("Failed to save story.");
+    }
   };
 
-  const handleAddMemory = (event: FormEvent<HTMLFormElement>) => {
+  const handleAddMemory = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!memoryText.trim()) {
       return;
     }
 
-    updateStore((current) => ({
+    const newMemory = {
+      id: createId(),
+      text: memoryText.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    setStore((current) => ({
       ...current,
-      memories: [
-        {
-          id: createId(),
-          text: memoryText.trim(),
-          createdAt: new Date().toISOString(),
-        },
-        ...current.memories,
-      ],
+      memories: [newMemory, ...current.memories],
     }));
     setMemoryText("");
-    setStatus("Memory added.");
+    try {
+      await saveLoveMemory(newMemory.id, newMemory.text, newMemory.createdAt);
+      setStatus("Memory added to database.");
+    } catch {
+      setStore((current) => ({
+        ...current,
+        memories: current.memories.filter((item) => item.id !== newMemory.id),
+      }));
+      setStatus("Failed to save memory.");
+    }
   };
 
   const handleUploadImages = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -109,40 +129,70 @@ export default function LoveEditPage() {
       }
 
       const dataUrl = await toDataUrl(file);
-      uploaded.push({
-        id: createId(),
-        dataUrl,
-        caption: imageCaption.trim() || "Our beautiful memory",
-        createdAt: new Date().toISOString(),
-      });
+      const id = createId();
+      const caption = imageCaption.trim() || "Our beautiful memory";
+      const createdAt = new Date().toISOString();
+
+      try {
+        const savedImage = await saveLoveImage({
+          id,
+          caption,
+          createdAt,
+          dataUrl,
+        });
+
+        uploaded.push(savedImage);
+      } catch {
+        setStatus("Some images failed to upload.");
+      }
     }
 
     if (uploaded.length > 0) {
-      updateStore((current) => ({
+      setStore((current) => ({
         ...current,
         images: [...uploaded, ...current.images],
       }));
-      setStatus(`${uploaded.length} image(s) added.`);
+      setStatus(`${uploaded.length} image(s) uploaded to database.`);
     }
 
     setImageCaption("");
     event.target.value = "";
   };
 
-  const removeMemory = (id: string) => {
-    updateStore((current) => ({
+  const removeMemory = async (id: string) => {
+    const previous = store.memories;
+    setStore((current) => ({
       ...current,
       memories: current.memories.filter((item) => item.id !== id),
     }));
-    setStatus("Memory removed.");
+    try {
+      await removeLoveMemory(id);
+      setStatus("Memory removed from database.");
+    } catch {
+      setStore((current) => ({
+        ...current,
+        memories: previous,
+      }));
+      setStatus("Failed to remove memory.");
+    }
   };
 
-  const removeImage = (id: string) => {
-    updateStore((current) => ({
+  const removeImage = async (id: string) => {
+    const previous = store.images;
+    setStore((current) => ({
       ...current,
       images: current.images.filter((item) => item.id !== id),
     }));
-    setStatus("Image removed.");
+    try {
+      await removeLoveImage(id);
+      setStatus("Image removed from database.");
+    } catch {
+      setStore((current) => ({
+        ...current,
+        images: previous,
+      }));
+      setStatus("Failed to remove image.");
+    }
   };
 
   return (
@@ -174,13 +224,13 @@ export default function LoveEditPage() {
           <>
             <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-white/70 p-4">
               <p className="text-sm text-[#5f4b74]">
-                Changes are auto-saved. You can also press Save All Changes anytime.
+                Changes are saved online. Press Sync Latest to refresh from database.
               </p>
               <button
                 onClick={handleSaveAll}
                 className="rounded-full bg-[#8c4cc2] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#7438a8]"
               >
-                Save All Changes
+                Sync Latest
               </button>
             </div>
 
@@ -264,7 +314,7 @@ export default function LoveEditPage() {
                   {store.images.map((image) => (
                     <div key={image.id} className="rounded-xl bg-white/80 p-2">
                       <Image
-                        src={image.dataUrl}
+                        src={image.url}
                         alt={image.caption}
                         width={220}
                         height={180}
