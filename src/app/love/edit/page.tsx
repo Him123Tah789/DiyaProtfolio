@@ -29,6 +29,17 @@ const toDataUrl = (file: File) =>
     reader.readAsDataURL(file);
   });
 
+const dataUrlBytes = (dataUrl: string) => {
+  const base64Index = dataUrl.indexOf(",");
+  if (base64Index === -1) {
+    return 0;
+  }
+
+  const base64 = dataUrl.slice(base64Index + 1);
+  const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+  return Math.floor((base64.length * 3) / 4) - padding;
+};
+
 const fileToImage = (file: File) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
@@ -49,22 +60,38 @@ const fileToImage = (file: File) =>
 
 const resizeImageToDataUrl = async (file: File) => {
   const image = await fileToImage(file);
-  const maxDimension = 1600;
-  const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
-  const width = Math.max(1, Math.round(image.width * scale));
-  const height = Math.max(1, Math.round(image.height * scale));
+  const maxUploadBytes = 900 * 1024;
+  const maxInitialDimension = 1400;
+  const scale = Math.min(1, maxInitialDimension / Math.max(image.width, image.height));
+
+  let width = Math.max(1, Math.round(image.width * scale));
+  let height = Math.max(1, Math.round(image.height * scale));
 
   const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
 
   const context = canvas.getContext("2d");
   if (!context) {
     throw new Error("Failed to prepare image for upload.");
   }
 
-  context.drawImage(image, 0, 0, width, height);
-  return canvas.toDataURL("image/jpeg", 0.82);
+  const qualities = [0.8, 0.72, 0.64, 0.58, 0.5, 0.45];
+
+  for (const quality of qualities) {
+    canvas.width = width;
+    canvas.height = height;
+    context.clearRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+
+    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+    if (dataUrlBytes(dataUrl) <= maxUploadBytes) {
+      return dataUrl;
+    }
+
+    width = Math.max(480, Math.round(width * 0.82));
+    height = Math.max(480, Math.round(height * 0.82));
+  }
+
+  throw new Error("Image is still too large after compression. Please choose a smaller file.");
 };
 
 export default function LoveEditPage() {
@@ -161,6 +188,7 @@ export default function LoveEditPage() {
 
     const uploaded: LoveImage[] = [];
     let failed = 0;
+    let lastErrorMessage = "";
     setStatus("Uploading images...");
 
     for (const file of Array.from(files)) {
@@ -176,8 +204,12 @@ export default function LoveEditPage() {
       } catch {
         try {
           dataUrl = await toDataUrl(file);
+          if (dataUrlBytes(dataUrl) > 900 * 1024) {
+            throw new Error("Image is too large.");
+          }
         } catch {
           failed += 1;
+          lastErrorMessage = "Image processing failed. Please choose a smaller image.";
           continue;
         }
       }
@@ -199,6 +231,7 @@ export default function LoveEditPage() {
         failed += 1;
 
         if (error instanceof Error) {
+          lastErrorMessage = error.message;
           setStatus(`Upload issue: ${error.message}`);
         }
       }
@@ -216,7 +249,7 @@ export default function LoveEditPage() {
         setStatus(`${uploaded.length} image(s) uploaded to database.`);
       }
     } else if (failed > 0) {
-      setStatus("All selected images failed to upload. Try smaller images.");
+      setStatus(lastErrorMessage || "All selected images failed to upload. Try smaller images.");
     }
 
     setImageCaption("");

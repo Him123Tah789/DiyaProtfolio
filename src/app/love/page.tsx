@@ -242,15 +242,32 @@ export default function LovePage() {
                   </p>
                 )}
                 {store.images.map((image) => (
-                  <div key={image.id} className="rounded-xl bg-white/80 p-2">
-                    <Image
-                      src={image.url}
-                      alt={image.caption}
-                      width={220}
-                      height={180}
-                      unoptimized
-                      className="h-32 w-full rounded-lg object-cover"
-                    />
+                  <div
+                    key={image.id}
+                    className="relative rounded-2xl border-2 border-[#f2b8d8] bg-gradient-to-br from-[#fff8fd] via-[#fff1f8] to-[#fde7f4] p-2 shadow-[0_10px_24px_rgba(222,120,175,0.25)]"
+                  >
+                    <span className="pointer-events-none absolute left-1.5 top-1 text-xs text-[#f0629f] drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">
+                      ❤
+                    </span>
+                    <span className="pointer-events-none absolute right-1.5 top-1 text-xs text-[#d46dff] drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">
+                      ❤
+                    </span>
+                    <span className="pointer-events-none absolute bottom-1 left-1.5 text-xs text-[#d46dff] drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">
+                      ❤
+                    </span>
+                    <span className="pointer-events-none absolute bottom-1 right-1.5 text-xs text-[#f0629f] drop-shadow-[0_1px_2px_rgba(255,255,255,0.9)]">
+                      ❤
+                    </span>
+                    <div className="rounded-xl border border-[#f8d6e8] bg-white/90 p-2">
+                      <Image
+                        src={image.url}
+                        alt={image.caption}
+                        width={220}
+                        height={180}
+                        unoptimized
+                        className="h-44 w-full rounded-lg bg-[#fff8fc] object-contain"
+                      />
+                    </div>
                     <p className="mt-2 text-xs text-[#704f88]">{image.caption}</p>
                   </div>
                 ))}
