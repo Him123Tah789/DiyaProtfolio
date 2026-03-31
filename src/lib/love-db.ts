@@ -5,6 +5,21 @@ import { neon } from "@neondatabase/serverless";
 
 import type { LoveImage, LoveStore, MemoryEntry } from "@/lib/love-store";
 
+const hasDatabaseConnection = () =>
+  Boolean(process.env.POSTGRES_URL || process.env.DATABASE_URL);
+
+let fallbackStore: LoveStore = {
+  story: "",
+  memories: [],
+  images: [],
+};
+
+const cloneStore = (store: LoveStore): LoveStore => ({
+  story: store.story,
+  memories: [...store.memories],
+  images: [...store.images],
+});
+
 const getSql = () => {
   const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 
@@ -70,6 +85,10 @@ const normalizeDate = (value: unknown) => {
 };
 
 export const getLoveStoreFromDb = async (): Promise<LoveStore> => {
+  if (!hasDatabaseConnection()) {
+    return cloneStore(fallbackStore);
+  }
+
   await ensureSchema();
   const sql = getSql();
 
@@ -112,6 +131,14 @@ export const getLoveStoreFromDb = async (): Promise<LoveStore> => {
 };
 
 export const updateStoryInDb = async (story: string) => {
+  if (!hasDatabaseConnection()) {
+    fallbackStore = {
+      ...fallbackStore,
+      story,
+    };
+    return;
+  }
+
   await ensureSchema();
   const sql = getSql();
 
@@ -123,6 +150,21 @@ export const updateStoryInDb = async (story: string) => {
 };
 
 export const addMemoryToDb = async (id: string, text: string, createdAt: string) => {
+  if (!hasDatabaseConnection()) {
+    fallbackStore = {
+      ...fallbackStore,
+      memories: [
+        {
+          id,
+          text,
+          createdAt: normalizeDate(createdAt),
+        },
+        ...fallbackStore.memories,
+      ],
+    };
+    return;
+  }
+
   await ensureSchema();
   const sql = getSql();
 
@@ -133,6 +175,14 @@ export const addMemoryToDb = async (id: string, text: string, createdAt: string)
 };
 
 export const deleteMemoryFromDb = async (id: string) => {
+  if (!hasDatabaseConnection()) {
+    fallbackStore = {
+      ...fallbackStore,
+      memories: fallbackStore.memories.filter((item) => item.id !== id),
+    };
+    return;
+  }
+
   await ensureSchema();
   const sql = getSql();
 
@@ -143,6 +193,22 @@ export const deleteMemoryFromDb = async (id: string) => {
 };
 
 export const addImageToDb = async (id: string, url: string, caption: string, createdAt: string) => {
+  if (!hasDatabaseConnection()) {
+    fallbackStore = {
+      ...fallbackStore,
+      images: [
+        {
+          id,
+          url,
+          caption,
+          createdAt: normalizeDate(createdAt),
+        },
+        ...fallbackStore.images,
+      ],
+    };
+    return;
+  }
+
   await ensureSchema();
   const sql = getSql();
 
@@ -153,6 +219,14 @@ export const addImageToDb = async (id: string, url: string, caption: string, cre
 };
 
 export const deleteImageFromDb = async (id: string) => {
+  if (!hasDatabaseConnection()) {
+    fallbackStore = {
+      ...fallbackStore,
+      images: fallbackStore.images.filter((item) => item.id !== id),
+    };
+    return;
+  }
+
   await ensureSchema();
   const sql = getSql();
 
@@ -169,7 +243,7 @@ export const deleteImageFromDb = async (id: string) => {
     WHERE id = ${id};
   `;
 
-  if (existing?.url) {
+  if (existing?.url && process.env.BLOB_READ_WRITE_TOKEN) {
     await del(existing.url, {
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });

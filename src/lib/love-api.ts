@@ -2,7 +2,18 @@ import type { LoveStore } from "@/lib/love-store";
 
 const parseResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
-    throw new Error("Request failed");
+    let message = "Request failed";
+
+    try {
+      const payload = (await response.json()) as { message?: unknown };
+      if (typeof payload.message === "string" && payload.message.trim()) {
+        message = payload.message;
+      }
+    } catch {
+      // Fallback to generic message when server did not return JSON.
+    }
+
+    throw new Error(message);
   }
 
   return (await response.json()) as T;

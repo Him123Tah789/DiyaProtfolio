@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent, FormEvent } from "react";
-import Image from "next/image";
+import NextImage from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -28,6 +28,44 @@ const toDataUrl = (file: File) =>
     reader.onerror = () => reject(new Error("Failed to read image."));
     reader.readAsDataURL(file);
   });
+
+const fileToImage = (file: File) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new window.Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Failed to decode image."));
+    };
+
+    image.src = objectUrl;
+  });
+
+const resizeImageToDataUrl = async (file: File) => {
+  const image = await fileToImage(file);
+  const maxDimension = 1600;
+  const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Failed to prepare image for upload.");
+  }
+
+  context.drawImage(image, 0, 0, width, height);
+  return canvas.toDataURL("image/jpeg", 0.82);
+};
 
 export default function LoveEditPage() {
   const [passphrase, setPassphrase] = useState("");
@@ -122,13 +160,28 @@ export default function LoveEditPage() {
     }
 
     const uploaded: LoveImage[] = [];
+    let failed = 0;
+    setStatus("Uploading images...");
 
     for (const file of Array.from(files)) {
       if (!file.type.startsWith("image/")) {
+        failed += 1;
         continue;
       }
 
-      const dataUrl = await toDataUrl(file);
+      let dataUrl: string;
+
+      try {
+        dataUrl = await resizeImageToDataUrl(file);
+      } catch {
+        try {
+          dataUrl = await toDataUrl(file);
+        } catch {
+          failed += 1;
+          continue;
+        }
+      }
+
       const id = createId();
       const caption = imageCaption.trim() || "Our beautiful memory";
       const createdAt = new Date().toISOString();
@@ -142,8 +195,12 @@ export default function LoveEditPage() {
         });
 
         uploaded.push(savedImage);
-      } catch {
-        setStatus("Some images failed to upload.");
+      } catch (error) {
+        failed += 1;
+
+        if (error instanceof Error) {
+          setStatus(`Upload issue: ${error.message}`);
+        }
       }
     }
 
@@ -152,7 +209,14 @@ export default function LoveEditPage() {
         ...current,
         images: [...uploaded, ...current.images],
       }));
-      setStatus(`${uploaded.length} image(s) uploaded to database.`);
+
+      if (failed > 0) {
+        setStatus(`${uploaded.length} image(s) uploaded, ${failed} failed.`);
+      } else {
+        setStatus(`${uploaded.length} image(s) uploaded to database.`);
+      }
+    } else if (failed > 0) {
+      setStatus("All selected images failed to upload. Try smaller images.");
     }
 
     setImageCaption("");
@@ -313,7 +377,7 @@ export default function LoveEditPage() {
                   )}
                   {store.images.map((image) => (
                     <div key={image.id} className="rounded-xl bg-white/80 p-2">
-                      <Image
+                      <NextImage
                         src={image.url}
                         alt={image.caption}
                         width={220}

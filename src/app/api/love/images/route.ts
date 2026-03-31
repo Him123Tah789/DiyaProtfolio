@@ -58,6 +58,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Invalid image payload." }, { status: 400 });
     }
 
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      await addImageToDb(id, dataUrl, caption, createdAt);
+
+      return NextResponse.json({
+        id,
+        url: dataUrl,
+        caption,
+        createdAt,
+      });
+    }
+
     const { mimeType, buffer } = dataUrlToBuffer(dataUrl);
     const extension = extensionFromMime(mimeType);
     const fileName = `love-images/${id}.${extension}`;

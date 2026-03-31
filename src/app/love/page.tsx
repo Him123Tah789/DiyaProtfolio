@@ -11,179 +11,16 @@ import {
   initialLoveStore,
 } from "@/lib/love-store";
 import { fetchLoveStore } from "@/lib/love-api";
-
-const flowerIcons = ["🌸", "🌷", "🌺", "🌹", "🌼", "🪷"];
-const loveIcons = ["❤", "💗", "💖", "💘", "💕", "💞", "💓", "🩷", "💜"];
-const objectIcons = ["✨", "⭐", "💫", "🎀", "🫧", "💍", "🕊️"];
-const colors = [
-  "#ff5f9e",
-  "#a96ae0",
-  "#ff7f7f",
-  "#6f9dff",
-  "#ff9ec7",
-  "#ffb347",
-  "#53c6ac",
-  "#d277ff",
-  "#ff6699",
-];
-
-type MovingItem = {
-  id: string;
-  left: string;
-  top: string;
-  delay: string;
-  duration: string;
-  size: string;
-  icon: string;
-  color: string;
-  x1: string;
-  y1: string;
-  x2: string;
-  y2: string;
-  x3: string;
-  y3: string;
-  x4: string;
-  y4: string;
-  r1: string;
-  r2: string;
-  r3: string;
-  r4: string;
-};
-
-const createSeededRandom = (seed: number) => {
-  let value = seed >>> 0;
-  return () => {
-    value = (value * 1664525 + 1013904223) >>> 0;
-    return value / 4294967296;
-  };
-};
-
-const randomRange = (random: () => number, min: number, max: number) =>
-  min + (max - min) * random();
-
-const makeFloodItems = (count: number, icons: string[]) =>
-  Array.from({ length: count }).map((_, index) => ({
-    id: `f-${index}`,
-    left: `${(index * 13 + (index % 7) * 5) % 100}%`,
-    delay: `${(index * 0.35) % 8}s`,
-    duration: `${4.2 + (index % 5) * 0.85}s`,
-    size: `${1 + (index % 3) * 0.35}rem`,
-    icon: icons[index % icons.length],
-    color: colors[index % colors.length],
-  }));
-
-const makeRandomMotionItems = (count: number, icons: string[], seed: number): MovingItem[] => {
-  const random = createSeededRandom(seed);
-
-  return Array.from({ length: count }).map((_, index) => ({
-    id: `m-${index}`,
-    left: `${Math.round(randomRange(random, 2, 96))}%`,
-    top: `${Math.round(randomRange(random, 4, 94))}%`,
-    delay: `${randomRange(random, 0, 3.5).toFixed(2)}s`,
-    duration: `${randomRange(random, 4.2, 7.1).toFixed(2)}s`,
-    size: `${randomRange(random, 0.95, 1.75).toFixed(2)}rem`,
-    icon: icons[index % icons.length],
-    color: colors[(index + 3) % colors.length],
-    x1: `${Math.round(randomRange(random, -26, 26))}px`,
-    y1: `${Math.round(randomRange(random, -22, 22))}px`,
-    x2: `${Math.round(randomRange(random, -30, 30))}px`,
-    y2: `${Math.round(randomRange(random, -30, 30))}px`,
-    x3: `${Math.round(randomRange(random, -36, 36))}px`,
-    y3: `${Math.round(randomRange(random, -36, 36))}px`,
-    x4: `${Math.round(randomRange(random, -46, 46))}px`,
-    y4: `${Math.round(randomRange(random, -46, 46))}px`,
-    r1: `${Math.round(randomRange(random, -18, 18))}deg`,
-    r2: `${Math.round(randomRange(random, -25, 25))}deg`,
-    r3: `${Math.round(randomRange(random, -35, 35))}deg`,
-    r4: `${Math.round(randomRange(random, -42, 42))}deg`,
-  }));
-};
-
-const makeBloomBursts = () =>
-  Array.from({ length: 18 }).map((_, index) => ({
-    id: `b-${index}`,
-    left: `${8 + index * 8}%`,
-    top: `${10 + (index % 4) * 18}%`,
-    delay: `${(index * 0.6) % 7}s`,
-    duration: `${2.2 + (index % 4) * 0.7}s`,
-    color: colors[index % colors.length],
-  }));
-
-const makeOrbitItems = (count: number, icons: string[]) =>
-  Array.from({ length: count }).map((_, index) => ({
-    id: `o-${index}`,
-    left: `${(index * 11 + (index % 5) * 9) % 100}%`,
-    top: `${(index * 9 + (index % 6) * 7) % 100}%`,
-    delay: `${(index * 0.4) % 9}s`,
-    duration: `${4.6 + (index % 6) * 0.8}s`,
-    size: `${0.95 + (index % 4) * 0.32}rem`,
-    icon: icons[index % icons.length],
-    color: colors[(index + 2) % colors.length],
-  }));
-
-const makeBloomFlowers = () =>
-  Array.from({ length: 48 }).map((_, index) => ({
-    id: `bf-${index}`,
-    left: `${(index * 17 + (index % 3) * 6) % 100}%`,
-    top: `${(index * 7 + (index % 4) * 11) % 100}%`,
-    delay: `${(index * 0.42) % 11}s`,
-    duration: `${2.4 + (index % 6) * 0.62}s`,
-    size: `${0.8 + (index % 4) * 0.4}rem`,
-    flower: flowerIcons[index % flowerIcons.length],
-    color: colors[(index + 4) % colors.length],
-  }));
-
-const nameHighlights = [
-  {
-    id: "name-diya",
-    text: "Diya",
-    left: "9%",
-    top: "15%",
-    duration: "7.5s",
-    delay: "0.2s",
-    color: "#ff3a88",
-    x1: "28px",
-    y1: "-30px",
-    x2: "-34px",
-    y2: "20px",
-    x3: "36px",
-    y3: "-10px",
-    x4: "-24px",
-    y4: "-42px",
-    r1: "6deg",
-    r2: "-8deg",
-    r3: "11deg",
-    r4: "-6deg",
-  },
-  {
-    id: "name-himu",
-    text: "Himu",
-    left: "68%",
-    top: "68%",
-    duration: "8.2s",
-    delay: "0.9s",
-    color: "#9a35ff",
-    x1: "-32px",
-    y1: "24px",
-    x2: "24px",
-    y2: "-28px",
-    x3: "-38px",
-    y3: "18px",
-    x4: "28px",
-    y4: "-40px",
-    r1: "-7deg",
-    r2: "8deg",
-    r3: "-10deg",
-    r4: "7deg",
-  },
-] as const;
-
-const romanticDialogs = [
-  "In every version of tomorrow, I still choose you.",
-  "Your smile turns ordinary moments into celebrations.",
-  "No distance can dim how deeply you are cherished.",
-  "You are my calm in chaos and my light in doubt.",
-];
+import {
+  flowerIcons,
+  loveIcons,
+  makeBloomBursts,
+  makeBloomFlowers,
+  makeFloodItems,
+  makeNameBits,
+  makeRandomMotionItems,
+  objectIcons,
+} from "@/lib/love-decor";
 
 export default function LovePage() {
   const [passphrase, setPassphrase] = useState("");
@@ -196,6 +33,7 @@ export default function LovePage() {
   const blooms = useMemo(() => makeBloomBursts(), []);
   const orbitItems = useMemo(() => makeRandomMotionItems(46, objectIcons, 3016), []);
   const bloomFlowers = useMemo(() => makeBloomFlowers(), []);
+  const nameBits = useMemo(() => makeNameBits(132, 8128), []);
 
   const handleUnlock = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -266,7 +104,7 @@ export default function LovePage() {
           </span>
         ))}
 
-        {nameHighlights.map((item) => (
+        {nameBits.map((item) => (
           <span
             key={item.id}
             className="love-name-highlight random-wander absolute"
@@ -277,6 +115,9 @@ export default function LovePage() {
                 animationDelay: item.delay,
                 animationDuration: item.duration,
                 color: item.color,
+                opacity: 0.55,
+                letterSpacing: "0.06em",
+                fontSize: item.size,
                 "--x1": item.x1,
                 "--y1": item.y1,
                 "--x2": item.x2,
@@ -377,106 +218,43 @@ export default function LovePage() {
 
         {isUnlocked && (
           <>
-            <p className="mt-6 leading-8 text-[#5f4b74]">
-              Every flower here blooms for your dreams, and every heart here carries one
-              message: keep going, keep growing, keep glowing. You are capable of amazing
-              things, and you are deeply loved.
-            </p>
-            <p className="mt-4 leading-8 text-[#5f4b74]">
-              This Love page will always be your private corner of encouragement. On the
-              hard days and the bright days, remember your journey is beautiful.
-            </p>
-
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <span className="pulse-love inline-flex items-center rounded-full bg-[#ffe3f0] px-4 py-2 text-sm font-semibold text-[#a54179]">
-                Bloom beyond limits 🌸
-              </span>
-              <span className="float-love inline-flex items-center rounded-full bg-[#f2e5ff] px-4 py-2 text-sm font-semibold text-[#74499a]">
-                Keep shining forever 💖
-              </span>
               <Link
                 href="/love/edit"
                 className="rounded-full border border-[#d5b2ef] bg-white/85 px-4 py-2 text-sm font-semibold text-[#6c3f96] transition hover:bg-[#f4e8ff]"
               >
-                Edit Story & Pictures
+                Edit Pictures
+              </Link>
+              <Link
+                href="/quiet-bloom"
+                className="rounded-full border border-[#d5b2ef] bg-white/85 px-4 py-2 text-sm font-semibold text-[#6c3f96] transition hover:bg-[#f4e8ff]"
+              >
+                Open Story Page
               </Link>
             </div>
 
-            <section className="mt-8 rounded-2xl bg-white/70 p-5">
-              <h2 className="font-display text-2xl font-semibold text-[#6b3d8d]">Romantic Poem</h2>
-              <p className="mt-3 text-sm leading-8 text-[#604a77]">
-                If love were a garden, your name would be spring,
-                every petal a promise, every breeze a song to sing.
-                In the quiet of night and the glow of day,
-                my heart keeps finding you, in every possible way.
-              </p>
-            </section>
-
             <section className="mt-6 rounded-2xl bg-white/70 p-5">
-              <h2 className="font-display text-2xl font-semibold text-[#6b3d8d]">Romantic Dialogs</h2>
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {romanticDialogs.map((line) => (
-                  <p key={line} className="rounded-xl bg-[#fff3fa] px-4 py-3 text-sm text-[#7a4a68]">
-                    {line}
+              <h2 className="font-display text-2xl font-semibold text-[#6b3d8d]">Picture Gallery</h2>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {store.images.length === 0 && (
+                  <p className="col-span-2 rounded-xl bg-white/60 p-3 text-sm text-[#6d5a82]">
+                    No pictures available yet.
                   </p>
+                )}
+                {store.images.map((image) => (
+                  <div key={image.id} className="rounded-xl bg-white/80 p-2">
+                    <Image
+                      src={image.url}
+                      alt={image.caption}
+                      width={220}
+                      height={180}
+                      unoptimized
+                      className="h-32 w-full rounded-lg object-cover"
+                    />
+                    <p className="mt-2 text-xs text-[#704f88]">{image.caption}</p>
+                  </div>
                 ))}
               </div>
-            </section>
-
-            <section className="mt-6 rounded-2xl bg-white/70 p-5">
-              <h2 className="font-display text-2xl font-semibold text-[#6b3d8d]">Our Story</h2>
-              {store.story ? (
-                <p className="mt-3 whitespace-pre-line text-sm leading-8 text-[#604a77]">{store.story}</p>
-              ) : (
-                <p className="mt-3 rounded-xl bg-white/65 p-3 text-sm text-[#6d5a82]">
-                  No story added yet. Use Edit Story & Pictures to write your love story.
-                </p>
-              )}
-            </section>
-
-            <section className="mt-6 grid gap-5 md:grid-cols-2">
-              <article className="rounded-2xl bg-white/70 p-5">
-                <h2 className="font-display text-2xl font-semibold text-[#6b3d8d]">Sweet Memories</h2>
-                <ul className="mt-4 space-y-2">
-                  {store.memories.length === 0 && (
-                    <li className="rounded-xl bg-white/60 p-3 text-sm text-[#6d5a82]">
-                      No memories added yet.
-                    </li>
-                  )}
-                  {store.memories.map((memory) => (
-                    <li key={memory.id} className="rounded-xl bg-white/80 p-3">
-                      <p className="text-sm text-[#6a507f]">{memory.text}</p>
-                      <span className="mt-2 block text-xs text-[#8b6ca4]">
-                        {new Date(memory.createdAt).toLocaleString()}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-
-              <article className="rounded-2xl bg-white/70 p-5">
-                <h2 className="font-display text-2xl font-semibold text-[#6b3d8d]">Picture Visualization</h2>
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  {store.images.length === 0 && (
-                    <p className="col-span-2 rounded-xl bg-white/60 p-3 text-sm text-[#6d5a82]">
-                      No pictures available yet.
-                    </p>
-                  )}
-                  {store.images.map((image) => (
-                    <div key={image.id} className="rounded-xl bg-white/80 p-2">
-                      <Image
-                        src={image.url}
-                        alt={image.caption}
-                        width={220}
-                        height={180}
-                        unoptimized
-                        className="h-32 w-full rounded-lg object-cover"
-                      />
-                      <p className="mt-2 text-xs text-[#704f88]">{image.caption}</p>
-                    </div>
-                  ))}
-                </div>
-              </article>
             </section>
           </>
         )}
