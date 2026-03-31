@@ -36,6 +36,7 @@ export const defaultPortfolioContent: PortfolioContent = {
     "C",
     "C++",
     "Python",
+    "Java",
     "JavaScript",
     "TypeScript",
     "HTML",
@@ -75,6 +76,20 @@ export const defaultPortfolioContent: PortfolioContent = {
       description:
         "This portfolio's built-in planner module for tasks, assignments, goals, and exam countdowns.",
       stack: "Next.js App Router, TypeScript",
+    },
+    {
+      id: "p4",
+      title: "Student Result Analyzer",
+      description:
+        "A Java desktop project that stores student marks, calculates GPA, and generates subject-wise performance summaries with pass/fail insights.",
+      stack: "Java, JavaFX, MySQL",
+    },
+    {
+      id: "p5",
+      title: "Library Management API",
+      description:
+        "A Java backend system for managing books, borrowing records, and due-date notifications with role-based access for admin and students.",
+      stack: "Java, Spring Boot, PostgreSQL, JWT",
     },
   ],
   blogPosts: [

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   ADMIN_STORAGE_KEY,
   PORTFOLIO_STORAGE_KEY,
@@ -13,6 +13,7 @@ import {
   type PortfolioContent,
   type ProjectItem,
 } from "@/lib/site-data";
+import { ACCESS_KEY } from "@/lib/love-store";
 
 type UploadedDoc = {
   id: string;
@@ -28,7 +29,7 @@ type AdminStore = {
   documents: UploadedDoc[];
 };
 
-const ADMIN_KEY = "DiyaHimu127";
+const ADMIN_KEYS = new Set([ACCESS_KEY, "DiyaHimu127"]);
 
 const initialStore: AdminStore = {
   profileImageDataUrl: "",
@@ -98,7 +99,11 @@ export default function AdminPage() {
       return;
     }
 
-    window.localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(store));
+    try {
+      window.localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(store));
+    } catch {
+      setError("Could not save admin data in this browser. Try clearing site storage.");
+    }
   }, [store, unlocked]);
 
   useEffect(() => {
@@ -106,7 +111,11 @@ export default function AdminPage() {
       return;
     }
 
-    window.localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(content));
+    try {
+      window.localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(content));
+    } catch {
+      setError("Could not save portfolio changes in this browser. Try clearing site storage.");
+    }
   }, [content, unlocked]);
 
   const totalDocs = store.documents.length;
@@ -115,8 +124,10 @@ export default function AdminPage() {
     [store.documents],
   );
 
-  const handleUnlock = () => {
-    if (passphrase.trim() === ADMIN_KEY) {
+  const handleUnlock = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (ADMIN_KEYS.has(passphrase.trim())) {
       setUnlocked(true);
       setError("");
       return;
@@ -304,7 +315,7 @@ export default function AdminPage() {
         <section className="glass mt-6 rounded-3xl p-6 sm:p-8">
           <h2 className="font-display text-2xl font-semibold">Admin Login</h2>
           <p className="mt-2 text-sm text-[#5f4b74]">Enter passphrase to continue.</p>
-          <div className="mt-4 flex flex-col gap-3 sm:max-w-md">
+          <form onSubmit={handleUnlock} className="mt-4 flex flex-col gap-3 sm:max-w-md">
             <input
               value={passphrase}
               onChange={(event) => setPassphrase(event.target.value)}
@@ -313,13 +324,13 @@ export default function AdminPage() {
               className="w-full rounded-xl border border-[#dec7f4] bg-white/85 px-4 py-2 outline-none ring-[#b98fda] focus:ring"
             />
             <button
-              onClick={handleUnlock}
+              type="submit"
               className="w-fit rounded-full bg-[#a478d1] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#8d59b8]"
             >
               Unlock Admin
             </button>
             {error && <p className="text-sm font-semibold text-[#b0366f]">{error}</p>}
-          </div>
+          </form>
         </section>
       )}
 
