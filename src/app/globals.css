@@ -12,6 +12,30 @@
   --pink-200: #ffd8ea;
   --card: rgba(255, 255, 255, 0.62);
   --card-border: rgba(158, 112, 189, 0.24);
+  --page-glow-a: #ffe6f4;
+  --page-glow-b: #efe4ff;
+  --page-base-a: #fff7fd;
+  --page-base-b: #f9f0ff;
+  --page-base-c: #fffdfd;
+}
+
+:root[data-theme="dark"] {
+  --background: #110d19;
+  --foreground: #f2eaff;
+  --lavender-50: #241b35;
+  --lavender-100: #2e2342;
+  --lavender-200: #3d2d59;
+  --lavender-300: #5a3f7f;
+  --lavender-500: #c99dff;
+  --pink-100: #41243a;
+  --pink-200: #5b2f50;
+  --card: rgba(26, 20, 39, 0.8);
+  --card-border: rgba(184, 133, 240, 0.36);
+  --page-glow-a: #2f1a3b;
+  --page-glow-b: #1a2c4d;
+  --page-base-a: #0f0b17;
+  --page-base-b: #140f20;
+  --page-base-c: #171126;
 }
 
 @theme inline {
@@ -31,11 +55,12 @@ html {
 
 body {
   background:
-    radial-gradient(circle at 10% 10%, #ffe6f4 0%, transparent 36%),
-    radial-gradient(circle at 88% 12%, #efe4ff 0%, transparent 34%),
-    linear-gradient(160deg, #fff7fd 0%, #f9f0ff 44%, #fffdfd 100%);
+    radial-gradient(circle at 10% 10%, var(--page-glow-a) 0%, transparent 36%),
+    radial-gradient(circle at 88% 12%, var(--page-glow-b) 0%, transparent 34%),
+    linear-gradient(160deg, var(--page-base-a) 0%, var(--page-base-b) 44%, var(--page-base-c) 100%);
   color: var(--foreground);
   font-family: var(--font-manrope), "Segoe UI", sans-serif;
+  transition: background 260ms ease, color 260ms ease;
 }
 
 .font-display {
@@ -338,6 +363,91 @@ body {
   background: rgba(165, 120, 205, 0.14);
   color: #7a4aa9;
   border: 1px solid rgba(165, 120, 205, 0.25);
+}
+
+.theme-toggle {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(171, 132, 217, 0.38);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0.55rem 0.95rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5f3a88;
+  box-shadow: 0 10px 22px rgba(108, 70, 149, 0.24);
+  backdrop-filter: blur(8px);
+  transition: transform 180ms ease, background-color 180ms ease, color 180ms ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+}
+
+.theme-toggle-icon {
+  display: inline-flex;
+  height: 1.2rem;
+  width: 1.2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(164, 120, 209, 0.14);
+}
+
+.theme-toggle-icon svg {
+  height: 0.95rem;
+  width: 0.95rem;
+}
+
+:root[data-theme="dark"] .hero-stage {
+  background:
+    radial-gradient(circle at 8% 22%, rgba(115, 74, 171, 0.35) 0%, transparent 30%),
+    radial-gradient(circle at 96% 16%, rgba(63, 140, 198, 0.32) 0%, transparent 34%),
+    linear-gradient(135deg, #171126 0%, #1b1330 42%, #121a2a 100%);
+  border-color: rgba(166, 117, 226, 0.36);
+}
+
+:root[data-theme="dark"] .projects-stage,
+:root[data-theme="dark"] .skills-stage,
+:root[data-theme="dark"] .theme-stage {
+  background:
+    radial-gradient(circle at 12% 15%, rgba(143, 83, 202, 0.32) 0%, transparent 34%),
+    radial-gradient(circle at 92% 24%, rgba(56, 136, 194, 0.35) 0%, transparent 35%),
+    linear-gradient(140deg, #181129 0%, #171f32 50%, #1e1530 100%);
+  border-color: rgba(166, 117, 226, 0.36);
+}
+
+:root[data-theme="dark"] .project-showcase-card,
+:root[data-theme="dark"] .skills-card,
+:root[data-theme="dark"] .theme-card,
+:root[data-theme="dark"] .glass {
+  background:
+    linear-gradient(145deg, rgba(31, 24, 47, 0.92) 0%, rgba(26, 19, 41, 0.9) 55%, rgba(23, 31, 46, 0.9) 100%);
+  border-color: rgba(178, 130, 235, 0.42);
+  color: #eee2ff;
+}
+
+:root[data-theme="dark"] .theme-toggle,
+:root[data-theme="dark"] .project-nav-btn {
+  background: rgba(24, 18, 38, 0.84);
+  color: #e9d7ff;
+  border-color: rgba(190, 145, 240, 0.52);
+}
+
+:root[data-theme="dark"] .theme-toggle-icon {
+  background: rgba(201, 157, 255, 0.2);
+}
+
+:root[data-theme="dark"] .project-kicker,
+:root[data-theme="dark"] .project-stack {
+  color: #d9b9ff;
 }
 
 .hacker-vibe :is(h1, h2, h3, h4, p, a, button, li, label) {
