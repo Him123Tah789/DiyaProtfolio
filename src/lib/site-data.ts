@@ -11,6 +11,22 @@ export type BlogPostItem = {
   summary: string;
 };
 
+export type EducationItem = {
+  id: string;
+  degree: string;
+  institution: string;
+  period: string;
+  details: string;
+};
+
+export type CertificateItem = {
+  id: string;
+  title: string;
+  issuer: string;
+  year: string;
+  details: string;
+};
+
 export type PortfolioContent = {
   heroBio: string;
   about: string;
@@ -20,6 +36,8 @@ export type PortfolioContent = {
   blogPosts: BlogPostItem[];
   educationTitle: string;
   educationDetails: string;
+  educationItems: EducationItem[];
+  certificates: CertificateItem[];
   achievements: string[];
   contactEmail: string;
 };
@@ -109,6 +127,40 @@ export const defaultPortfolioContent: PortfolioContent = {
   educationTitle: "B.Sc. in Computer Science and Engineering",
   educationDetails:
     "Focused on software engineering, algorithms, and data-driven systems. Relevant interests: web development, problem solving, productivity tools, and human-centered software.",
+  educationItems: [
+    {
+      id: "e1",
+      degree: "B.Sc. in Computer Science and Engineering",
+      institution: "University Program",
+      period: "2023 - Present",
+      details:
+        "Studying core computer science, software engineering, and project-based development with a focus on practical systems.",
+    },
+    {
+      id: "e2",
+      degree: "Higher Secondary / Pre-University",
+      institution: "Science Background",
+      period: "2021 - 2023",
+      details:
+        "Built a strong foundation in mathematics, logic, and analytical problem solving before entering CSE.",
+    },
+  ],
+  certificates: [
+    {
+      id: "c1",
+      title: "Web Development Fundamentals",
+      issuer: "Online Learning Platform",
+      year: "2025",
+      details: "Certificate covering responsive UI, semantic HTML, CSS, and modern frontend workflows.",
+    },
+    {
+      id: "c2",
+      title: "Problem Solving and Algorithms",
+      issuer: "Programming Course",
+      year: "2024",
+      details: "Completed training in algorithmic thinking, data structures, and structured coding practice.",
+    },
+  ],
   achievements: [
     "Participated in university tech workshops and programming sessions.",
     "Built multiple academic and personal mini projects with modern web technologies.",
@@ -125,17 +177,47 @@ export const parsePortfolioContent = (raw: string | null): PortfolioContent => {
 
   try {
     const parsed = JSON.parse(raw) as Partial<PortfolioContent>;
+    const asStringArray = (value: unknown, fallback: string[]) =>
+      Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : fallback;
+    const asEducationArray = (value: unknown) =>
+      Array.isArray(value)
+        ? value.filter(
+            (item): item is EducationItem =>
+              Boolean(item) &&
+              typeof item === "object" &&
+              typeof (item as EducationItem).id === "string" &&
+              typeof (item as EducationItem).degree === "string" &&
+              typeof (item as EducationItem).institution === "string" &&
+              typeof (item as EducationItem).period === "string" &&
+              typeof (item as EducationItem).details === "string",
+          )
+        : defaultPortfolioContent.educationItems;
+    const asCertificateArray = (value: unknown) =>
+      Array.isArray(value)
+        ? value.filter(
+            (item): item is CertificateItem =>
+              Boolean(item) &&
+              typeof item === "object" &&
+              typeof (item as CertificateItem).id === "string" &&
+              typeof (item as CertificateItem).title === "string" &&
+              typeof (item as CertificateItem).issuer === "string" &&
+              typeof (item as CertificateItem).year === "string" &&
+              typeof (item as CertificateItem).details === "string",
+          )
+        : defaultPortfolioContent.certificates;
 
     return {
       heroBio: parsed.heroBio ?? defaultPortfolioContent.heroBio,
       about: parsed.about ?? defaultPortfolioContent.about,
-      technicalSkills: parsed.technicalSkills ?? defaultPortfolioContent.technicalSkills,
-      softSkills: parsed.softSkills ?? defaultPortfolioContent.softSkills,
-      projects: parsed.projects ?? defaultPortfolioContent.projects,
-      blogPosts: parsed.blogPosts ?? defaultPortfolioContent.blogPosts,
+      technicalSkills: asStringArray(parsed.technicalSkills, defaultPortfolioContent.technicalSkills),
+      softSkills: asStringArray(parsed.softSkills, defaultPortfolioContent.softSkills),
+      projects: Array.isArray(parsed.projects) ? parsed.projects : defaultPortfolioContent.projects,
+      blogPosts: Array.isArray(parsed.blogPosts) ? parsed.blogPosts : defaultPortfolioContent.blogPosts,
       educationTitle: parsed.educationTitle ?? defaultPortfolioContent.educationTitle,
       educationDetails: parsed.educationDetails ?? defaultPortfolioContent.educationDetails,
-      achievements: parsed.achievements ?? defaultPortfolioContent.achievements,
+      educationItems: asEducationArray(parsed.educationItems),
+      certificates: asCertificateArray(parsed.certificates),
+      achievements: asStringArray(parsed.achievements, defaultPortfolioContent.achievements),
       contactEmail: parsed.contactEmail ?? defaultPortfolioContent.contactEmail,
     };
   } catch {

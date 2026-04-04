@@ -3,7 +3,8 @@
 import type { MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import {
   ADMIN_STORAGE_KEY,
   PORTFOLIO_STORAGE_KEY,
@@ -39,6 +40,7 @@ const resetProjectPointer = (event: MouseEvent<HTMLElement>) => {
 };
 
 export default function Home() {
+  const router = useRouter();
   const [content] = useState<PortfolioContent>(() => {
     if (typeof window === "undefined") {
       return defaultPortfolioContent;
@@ -65,6 +67,7 @@ export default function Home() {
   });
   const [activeProjectIndex, setActiveProjectIndex] = useState(0);
   const [projectChangeTick, setProjectChangeTick] = useState(0);
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (content.projects.length <= 1) {
@@ -92,36 +95,70 @@ export default function Home() {
 
   const activeProject = content.projects[activeProjectIndex];
 
+  const handleSwipeEnd = (endX: number, endY: number) => {
+    if (!swipeStartRef.current) {
+      return;
+    }
+
+    const deltaX = endX - swipeStartRef.current.x;
+    const deltaY = endY - swipeStartRef.current.y;
+
+    // Only treat mostly-horizontal gestures as swipe navigation.
+    if (Math.abs(deltaX) < 70 || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) {
+      swipeStartRef.current = null;
+      return;
+    }
+
+    if (deltaX >= 70) {
+      router.push("/study-plan");
+    } else if (deltaX <= -70) {
+      router.push("/projects");
+    }
+
+    swipeStartRef.current = null;
+  };
+
   return (
-    <div className="hacker-vibe text-[#2b1c3c]">
+    <div
+      className="hacker-vibe home-transparent text-[color:var(--foreground)]"
+      onPointerDown={(event) => {
+        swipeStartRef.current = { x: event.clientX, y: event.clientY };
+      }}
+      onPointerUp={(event) => {
+        handleSwipeEnd(event.clientX, event.clientY);
+      }}
+    >
       <header className="sticky top-0 z-40 bg-transparent">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <a href="#home" className="font-display text-xl font-semibold tracking-wide">
             DiyaVerse
           </a>
           <div className="hidden items-center gap-5 text-sm font-semibold md:flex">
-            <a href="#about" className="transition hover:text-[#8d59b8]">
+            <a href="#about" className="transition hover:text-[color:var(--lavender-500)]">
               About
             </a>
-            <a href="#skills" className="transition hover:text-[#8d59b8]">
+            <a href="#skills" className="transition hover:text-[color:var(--lavender-500)]">
               Skills
             </a>
-            <a href="#projects" className="transition hover:text-[#8d59b8]">
+            <a href="#projects" className="transition hover:text-[color:var(--lavender-500)]">
               Projects
             </a>
-            <a href="#blog" className="transition hover:text-[#8d59b8]">
+            <a href="#blog" className="transition hover:text-[color:var(--lavender-500)]">
               Blog
             </a>
-            <a href="#education" className="transition hover:text-[#8d59b8]">
+            <a href="#education" className="transition hover:text-[color:var(--lavender-500)]">
               Education
             </a>
-            <a href="#achievements" className="transition hover:text-[#8d59b8]">
+            <a href="#certificates" className="transition hover:text-[color:var(--lavender-500)]">
+              Certificates
+            </a>
+            <a href="#achievements" className="transition hover:text-[color:var(--lavender-500)]">
               Achievements
             </a>
-            <a href="#contact" className="transition hover:text-[#8d59b8]">
+            <a href="#contact" className="transition hover:text-[color:var(--lavender-500)]">
               Contact
             </a>
-            <Link href="/admin" className="transition hover:text-[#8d59b8]">
+            <Link href="/admin" className="transition hover:text-[color:var(--lavender-500)]">
               Admin
             </Link>
           </div>
@@ -135,6 +172,21 @@ export default function Home() {
       </header>
 
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 sm:py-14">
+        <section className="glass rounded-2xl px-5 py-4">
+          <p className="text-sm font-semibold text-[color:var(--foreground)]">Quick Swipe Navigation</p>
+          <p className="mt-1 text-xs text-[color:var(--muted-foreground)]">
+            Swipe right to open Study Plan. Swipe left to open Projects page.
+          </p>
+          <div className="mt-3">
+            <Link
+              href="/study-plan"
+              className="inline-flex rounded-full border border-[#c9a7e8] bg-white/70 px-4 py-2 text-xs font-semibold text-[#603b80] transition hover:bg-[#f5ebff]"
+            >
+              View Study Plan
+            </Link>
+          </div>
+        </section>
+
         <section
           id="home"
           className="hero-stage fade-up grid gap-8 rounded-3xl px-6 py-10 sm:px-9 md:grid-cols-[1.35fr_auto] md:items-center"
@@ -149,7 +201,7 @@ export default function Home() {
             <h1 className="font-display text-4xl leading-tight font-semibold sm:text-5xl">
               DiyaVerse - Portfolio and Study Space of Tasfia Rashid Diya
             </h1>
-            <p className="max-w-2xl text-base leading-7 text-[#5f4b74] sm:text-lg">{content.heroBio}</p>
+            <p className="max-w-2xl text-base leading-7 text-[color:var(--muted-foreground)] sm:text-lg">{content.heroBio}</p>
             <div className="flex flex-wrap gap-3">
               <a
                 href="#projects"
@@ -162,6 +214,12 @@ export default function Home() {
                 className="rounded-full border border-[#c9a7e8] bg-white/70 px-6 py-3 text-sm font-semibold text-[#603b80] transition hover:bg-[#f5ebff]"
               >
                 Open Planner
+              </Link>
+              <Link
+                href="/study-plan"
+                className="rounded-full border border-[#c9a7e8] bg-white/70 px-6 py-3 text-sm font-semibold text-[#603b80] transition hover:bg-[#f5ebff]"
+              >
+                View Study Plan
               </Link>
               <Link
                 href="/admin"
@@ -188,14 +246,14 @@ export default function Home() {
                 )}
               </div>
               <h2 className="font-display text-xl font-semibold">Tasfia Rashid Diya</h2>
-              <p className="mt-1 text-xs text-[#694d80]">CSE Student | Future Software Engineer</p>
+              <p className="mt-1 text-xs text-[color:var(--muted-foreground)]">CSE Student | Future Software Engineer</p>
             </div>
           </div>
         </section>
 
         <section id="about" className="glass rounded-3xl px-6 py-8 sm:px-9">
           <h3 className="font-display text-3xl font-semibold">About</h3>
-          <p className="mt-3 max-w-4xl leading-7 text-[#5f4b74]">{content.about}</p>
+          <p className="mt-3 max-w-4xl leading-7 text-[color:var(--muted-foreground)]">{content.about}</p>
         </section>
 
         <section
@@ -258,7 +316,9 @@ export default function Home() {
                   Featured Build
                 </p>
                 <h4 className="font-display mt-2 text-2xl font-semibold">{activeProject.title}</h4>
-                <p className="mt-3 text-sm leading-7 text-[#4f426a]">{activeProject.description}</p>
+                <p className="mt-3 text-sm leading-7 text-[color:var(--muted-foreground)]">
+                  {activeProject.description}
+                </p>
                 <p className="project-stack mt-4 inline-block rounded-full px-3 py-1 text-xs font-semibold tracking-wide">
                   {activeProject.stack}
                 </p>
@@ -313,7 +373,7 @@ export default function Home() {
             {content.blogPosts.map((post) => (
               <article key={post.id} className="theme-card rounded-2xl p-5">
                 <h4 className="font-display text-xl font-semibold">{post.title}</h4>
-                <p className="mt-2 text-sm leading-6 text-[#614b79]">{post.summary}</p>
+                <p className="mt-2 text-sm leading-6 text-[color:var(--muted-foreground)]">{post.summary}</p>
               </article>
             ))}
           </div>
@@ -328,11 +388,52 @@ export default function Home() {
           <span className="theme-grid-glow" />
 
           <h3 className="font-display text-3xl font-semibold">Education</h3>
-          <div className="theme-grid mt-5">
+          <div className="theme-grid mt-5 space-y-4">
             <div className="theme-card rounded-2xl p-5">
-            <p className="font-semibold text-[#4f3368]">{content.educationTitle}</p>
-            <p className="mt-1 text-sm text-[#5f4b74]">{content.educationDetails}</p>
+              <p className="font-semibold text-[color:var(--foreground)]">{content.educationTitle}</p>
+              <p className="mt-1 text-sm text-[color:var(--muted-foreground)]">
+                {content.educationDetails}
+              </p>
             </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {(content.educationItems ?? []).map((item) => (
+                <article key={item.id} className="theme-card rounded-2xl p-5">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-[#9b65c7] uppercase">
+                    {item.period}
+                  </p>
+                  <h4 className="font-display mt-2 text-2xl font-semibold">{item.degree}</h4>
+                  <p className="mt-1 text-sm text-[color:var(--foreground)]">{item.institution}</p>
+                  <p className="mt-3 text-sm leading-6 text-[color:var(--muted-foreground)]">
+                    {item.details}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="certificates"
+          className="theme-stage relative overflow-hidden rounded-3xl px-6 py-8 sm:px-9"
+        >
+          <span className="theme-orb theme-orb-a" />
+          <span className="theme-orb theme-orb-b" />
+          <span className="theme-grid-glow" />
+
+          <h3 className="font-display text-3xl font-semibold">Certificates</h3>
+          <div className="theme-grid mt-5 grid gap-4 md:grid-cols-2">
+            {(content.certificates ?? []).map((item) => (
+              <article key={item.id} className="theme-card rounded-2xl p-5">
+                <p className="text-xs font-semibold tracking-[0.18em] text-[#9b65c7] uppercase">
+                  {item.year}
+                </p>
+                <h4 className="font-display mt-2 text-2xl font-semibold">{item.title}</h4>
+                <p className="mt-1 text-sm text-[color:var(--foreground)]">{item.issuer}</p>
+                <p className="mt-3 text-sm leading-6 text-[color:var(--muted-foreground)]">
+                  {item.details}
+                </p>
+              </article>
+            ))}
           </div>
         </section>
 
@@ -345,7 +446,7 @@ export default function Home() {
           <span className="theme-grid-glow" />
 
           <h3 className="font-display text-3xl font-semibold">Achievements and Activities</h3>
-          <ul className="theme-grid theme-card mt-4 space-y-3 rounded-2xl p-5 text-sm leading-7 text-[#5f4b74]">
+          <ul className="theme-grid theme-card mt-4 space-y-3 rounded-2xl p-5 text-sm leading-7 text-[color:var(--muted-foreground)]">
             {content.achievements.map((item) => (
               <li key={item}>{item}</li>
             ))}
@@ -354,15 +455,15 @@ export default function Home() {
 
         <section id="contact" className="glass rounded-3xl px-6 py-8 text-center sm:px-9">
           <h3 className="font-display text-3xl font-semibold">Contact</h3>
-          <p className="mt-3 text-sm leading-7 text-[#5f4b74] sm:text-base">
+          <p className="mt-3 text-sm leading-7 text-[color:var(--muted-foreground)] sm:text-base">
             Open to internship opportunities, student collaborations, and meaningful tech
             conversations. Reach out and let us build something valuable.
           </p>
-          <p className="mt-4 text-sm font-semibold text-[#75489c]">Email: {content.contactEmail}</p>
+          <p className="mt-4 text-sm font-semibold text-[color:var(--foreground)]">Email: {content.contactEmail}</p>
         </section>
       </main>
 
-      <footer className="relative mx-auto mb-6 mt-2 w-full max-w-6xl px-6 text-center text-sm text-[#8b75a2]">
+      <footer className="relative mx-auto mb-6 mt-2 w-full max-w-6xl px-6 text-center text-sm text-[color:var(--muted-foreground)]">
         <p>Designed with care for Tasfia Rashid Diya&apos;s future journey.</p>
         <Link
           href="/love"

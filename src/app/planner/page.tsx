@@ -2,51 +2,16 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-
-type Task = {
-  id: string;
-  title: string;
-  dueDate: string;
-  done: boolean;
-};
-
-type Assignment = {
-  id: string;
-  title: string;
-  course: string;
-  deadline: string;
-  status: "Not Started" | "In Progress" | "Submitted";
-};
-
-type Exam = {
-  id: string;
-  name: string;
-  date: string;
-};
-
-type Goal = {
-  id: string;
-  text: string;
-  createdAt: string;
-};
-
-type PlannerState = {
-  tasks: Task[];
-  assignments: Assignment[];
-  exams: Exam[];
-  goals: Goal[];
-  notes: string;
-};
-
-const STORAGE_KEY = "diyaverse-planner-v1";
-
-const initialState: PlannerState = {
-  tasks: [],
-  assignments: [],
-  exams: [],
-  goals: [],
-  notes: "",
-};
+import {
+  PLANNER_STORAGE_KEY,
+  initialPlannerState,
+  parsePlannerState,
+  type Assignment,
+  type Exam,
+  type Goal,
+  type PlannerState,
+  type Task,
+} from "@/lib/planner-data";
 
 const generateId = () =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -54,20 +19,10 @@ const generateId = () =>
 export default function PlannerPage() {
   const [planner, setPlanner] = useState<PlannerState>(() => {
     if (typeof window === "undefined") {
-      return initialState;
+      return initialPlannerState;
     }
 
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-
-    if (!saved) {
-      return initialState;
-    }
-
-    try {
-      return JSON.parse(saved) as PlannerState;
-    } catch {
-      return initialState;
-    }
+    return parsePlannerState(window.localStorage.getItem(PLANNER_STORAGE_KEY));
   });
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDueDate, setTaskDueDate] = useState("");
@@ -79,7 +34,7 @@ export default function PlannerPage() {
   const [goalText, setGoalText] = useState("");
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(planner));
+    window.localStorage.setItem(PLANNER_STORAGE_KEY, JSON.stringify(planner));
   }, [planner]);
 
   const upcomingExams = useMemo(() => {

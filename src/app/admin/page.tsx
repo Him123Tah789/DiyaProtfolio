@@ -10,6 +10,8 @@ import {
   defaultPortfolioContent,
   parsePortfolioContent,
   type BlogPostItem,
+  type CertificateItem,
+  type EducationItem,
   type PortfolioContent,
   type ProjectItem,
 } from "@/lib/site-data";
@@ -150,6 +152,28 @@ export default function AdminPage() {
     setContent((current) => ({
       ...current,
       blogPosts: current.blogPosts.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item,
+      ),
+    }));
+  };
+
+  const updateEducation = (id: string, field: keyof Omit<EducationItem, "id">, value: string) => {
+    setContent((current) => ({
+      ...current,
+      educationItems: (current.educationItems ?? []).map((item) =>
+        item.id === id ? { ...item, [field]: value } : item,
+      ),
+    }));
+  };
+
+  const updateCertificate = (
+    id: string,
+    field: keyof Omit<CertificateItem, "id">,
+    value: string,
+  ) => {
+    setContent((current) => ({
+      ...current,
+      certificates: (current.certificates ?? []).map((item) =>
         item.id === id ? { ...item, [field]: value } : item,
       ),
     }));
@@ -669,6 +693,142 @@ export default function AdminPage() {
                   className="mt-2 w-full rounded-xl border border-[#dec7f4] bg-white/80 px-4 py-3 outline-none ring-[#b98fda] focus:ring"
                 />
               </label>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-[#5c3c7f]">Education Entries</p>
+                  <button
+                    onClick={() =>
+                      setContent((current) => ({
+                        ...current,
+                        educationItems: [
+                          ...(current.educationItems ?? []),
+                          {
+                            id: generateId(),
+                            degree: "New Education Entry",
+                            institution: "Institution",
+                            period: "Year - Year",
+                            details: "Add education details.",
+                          },
+                        ],
+                      }))
+                    }
+                    className="rounded-full border border-[#d8b9ef] bg-white px-3 py-1 text-xs font-semibold text-[#7c4aa5]"
+                  >
+                    Add Education
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {(content.educationItems ?? []).map((item) => (
+                    <div key={item.id} className="rounded-xl bg-white/70 p-3">
+                      <input
+                        value={item.degree}
+                        onChange={(event) => updateEducation(item.id, "degree", event.target.value)}
+                        className="w-full rounded-lg border border-[#dec7f4] bg-white px-3 py-2 text-sm"
+                      />
+                      <input
+                        value={item.institution}
+                        onChange={(event) =>
+                          updateEducation(item.id, "institution", event.target.value)
+                        }
+                        className="mt-2 w-full rounded-lg border border-[#dec7f4] bg-white px-3 py-2 text-sm"
+                      />
+                      <input
+                        value={item.period}
+                        onChange={(event) => updateEducation(item.id, "period", event.target.value)}
+                        className="mt-2 w-full rounded-lg border border-[#dec7f4] bg-white px-3 py-2 text-sm"
+                      />
+                      <textarea
+                        value={item.details}
+                        onChange={(event) => updateEducation(item.id, "details", event.target.value)}
+                        rows={2}
+                        className="mt-2 w-full rounded-lg border border-[#dec7f4] bg-white px-3 py-2 text-sm"
+                      />
+                      <button
+                        onClick={() =>
+                          setContent((current) => ({
+                            ...current,
+                            educationItems: (current.educationItems ?? []).filter(
+                              (entry) => entry.id !== item.id,
+                            ),
+                          }))
+                        }
+                        className="mt-2 rounded-full border border-[#f0bfd8] bg-white px-3 py-1 text-xs font-semibold text-[#a44a73]"
+                      >
+                        Delete Education
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-[#5c3c7f]">Certificates</p>
+                  <button
+                    onClick={() =>
+                      setContent((current) => ({
+                        ...current,
+                        certificates: [
+                          ...(current.certificates ?? []),
+                          {
+                            id: generateId(),
+                            title: "New Certificate",
+                            issuer: "Issuer",
+                            year: "2026",
+                            details: "Add certificate details.",
+                          },
+                        ],
+                      }))
+                    }
+                    className="rounded-full border border-[#d8b9ef] bg-white px-3 py-1 text-xs font-semibold text-[#7c4aa5]"
+                  >
+                    Add Certificate
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {(content.certificates ?? []).map((item) => (
+                    <div key={item.id} className="rounded-xl bg-white/70 p-3">
+                      <input
+                        value={item.title}
+                        onChange={(event) => updateCertificate(item.id, "title", event.target.value)}
+                        className="w-full rounded-lg border border-[#dec7f4] bg-white px-3 py-2 text-sm"
+                      />
+                      <input
+                        value={item.issuer}
+                        onChange={(event) => updateCertificate(item.id, "issuer", event.target.value)}
+                        className="mt-2 w-full rounded-lg border border-[#dec7f4] bg-white px-3 py-2 text-sm"
+                      />
+                      <input
+                        value={item.year}
+                        onChange={(event) => updateCertificate(item.id, "year", event.target.value)}
+                        className="mt-2 w-full rounded-lg border border-[#dec7f4] bg-white px-3 py-2 text-sm"
+                      />
+                      <textarea
+                        value={item.details}
+                        onChange={(event) =>
+                          updateCertificate(item.id, "details", event.target.value)
+                        }
+                        rows={2}
+                        className="mt-2 w-full rounded-lg border border-[#dec7f4] bg-white px-3 py-2 text-sm"
+                      />
+                      <button
+                        onClick={() =>
+                          setContent((current) => ({
+                            ...current,
+                            certificates: (current.certificates ?? []).filter(
+                              (entry) => entry.id !== item.id,
+                            ),
+                          }))
+                        }
+                        className="mt-2 rounded-full border border-[#f0bfd8] bg-white px-3 py-1 text-xs font-semibold text-[#a44a73]"
+                      >
+                        Delete Certificate
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <label className="text-sm font-semibold text-[#5c3c7f]">
                 Achievements (one per line)
